@@ -1,105 +1,144 @@
-# 🐳 Guia do Backend
+# Guia do Backend
 
-🥑 [Documentação do Banco de Dados🔗](../docs/db/README.md)
+[Documentacao do Banco de Dados](../docs/db/README.md)
 
-🥑 [Documentação da API REST🔗](../docs/api/README.md)
+[Documentacao da API REST](../docs/api/README.md)
 
-## 💾 Setup Local Híbrido
+## Setup Local Hibrido
 
-> Parte do setup com containers (banco MySQL e PhpMyAdmin) e API REST rodando localmente 
-
-Observei que um setup híbrido docker e código local é mais performático no Windows 11/10, por conta da emulação do WSL utilizada pelo Docker Desktop. 
-
-A lógica é que quanto menos coisas pra ele emular, mais rápido o retorno das requisições.
-
-O foco do tutorial é para Windows 10/11.
+Parte do setup com containers e parte local costuma performar melhor no Windows.
 
 ### Requisitos
 
-- 🐋 Docker Desktop
-- 🐘 PHP
+- Docker Desktop
+- Composer
+- PHP 8.1+
 
-### Passo 1 -  Configurando Docker
+## Jeito Recomendado de Rodar
 
-Atualmente utilizamos apenas dois containers: do MySQL e do PhpMyAdmin. 
-
-Porém, seguiremos o processo descrito no `README.md` geral do projeto que vai criar todas as imagens na sua máquina pois atualmente não criamos um dockerfile só com as duas relevantes. Lá, temos:
-
-```bash
-# Se já rodou no README.md geral, ignore! Se não, rode e espere finalizar:
-./setup.sh
-```
-Não esqueça de deixar o Docker Desktop aberto rodando, ele será necessário para executar os containers.
-
-1. Remover containers com configuração base
+Na raiz do projeto:
 
 ```bash
-docker rm -f hortas_mysql hortas_phpmyadmin
+copy backend\.env.example backend\.env
+docker compose up -d mysql php nginx phpmyadmin redis
+docker compose exec php composer config --global audit.block-insecure false
+docker compose exec php composer config --global process-timeout 0
+docker compose exec php composer install --prefer-dist --no-progress
 ```
 
-2. Criar uma network para os dois containers conversarem
+Importante:
 
-```bash
-docker network create hortas_network
-```
-3. Subir os containers relevantes com as configurações de variáveis relevantes:
+- O backend responde em `http://localhost:8181/api/v1`
+- O login funciona em `POST http://localhost:8181/api/v1/sessoes/login`
+- Se existir conflito de configuracao no Nginx, mantenha desativado `docker/nginx/sites/ci.conf.disabled` no ambiente local
 
-```bash
-docker run -d --name hortas_mysql --network hortas_network -e MYSQL_ROOT_PASSWORD=root_password -e MYSQL_DATABASE=railway -p 3306:3306 mysql:8.0
-docker run -d --name hortas_phpmyadmin --network hortas_network -e PMA_HOST=hortas_mysql -e PMA_PORT=3306 -e PMA_USER=root -e PMA_PASSWORD=root_password -p 8080:80 phpmyadmin/phpmyadmin
-```
+### Variaveis de Ambiente
 
-4. Atualizar o `.env` para este conteúdo:
+Crie `backend/.env` com base em `backend/.env.example`.
 
-```bash
+Exemplo:
+
+```env
 # Environment
 APP_ENV=development
 APP_DEBUG=true
 
 # Database
-DB_HOST=127.0.0.1
+DB_HOST=mysql
 DB_NAME=railway
-DB_USER=root
-DB_PASS=root_password
+DB_USER=hortas_user
+DB_PASS=hortas_password
 DB_CHARSET=utf8mb4
 
 # JWT
 JWT_SECRET=hortas_dev
+JWT_ALGORITHM=HS256
+JWT_TTL=7200
 
 # API
 API_VERSION=v1
-
 ```
-4. Acessar as URLs dos Serviços:
 
-- **Backend API**: http://localhost:8181
-- **phpMyAdmin**: http://localhost:8080
-- **URL base da API REST:** http://localhost:8000/api/v1/
+### URLs de Acesso
 
-É possível que você encontre erros ao tentar mandar requisições nessa etapa. Isso acontece porque o banco de dados não está criado e não há tabelas dentro dele.
+- Backend API: `http://localhost:8181/api/v1`
+- phpMyAdmin: `http://localhost:8080`
 
-### Passo 2 - Criando o banco de dados MySQL + uso da API
+## Banco de Dados e Seeds
 
-1. Rodar os scripts `.sql` na pasta `backend/src/Utils/SQL` na ordem enumerada, um por vez, na aba "SQL" do PhpMyAdmin. Isto criará o banco e seus dados seed. 
-    **Dica:** Se ao executar o script 0 não aparecer nada, atualize a coluna lateral de bancos de dados no botão de setinha circular
+Se o banco ainda nao estiver populado, rode os SQLs da pasta `backend/src/Utils/SQL` na ordem:
 
-2. Entrar na pasta backend e rodar o comando `php -S localhost:8000 -t public public/index.php `. Isto inicia a API REST do projeto
+1. `00_SQL_criar_banco.sql`
+2. `01_SQL_seed_dados_iniciais.sql`
+3. `02_SQL_seed_dados_teste.sql`
 
-3. Baixar e exportar os templates da API REST para o Postman disponíveis [aqui 🔗](../postman)
+Voce pode executar pelo phpMyAdmin ou importar via terminal.
 
-4. Utilizar a API REST conforme documentado na [documentação da API🔗](../docs/api/README.md)
+Para listar os usuarios carregados:
 
----
+```bash
+docker compose exec mysql mysql -u hortas_user -phortas_password railway -e "SELECT email, nome_completo, cpf FROM usuarios;"
+```
 
-## 💾 Setup Local
+## Login de Teste
 
-\#TODO - Não utilizamos todos os containers ao mesmo tempo para agilizar e melhorar performance.
+Exemplo de teste:
 
----
+```bash
+curl -X POST http://localhost:8181/api/v1/sessoes/login \
+  -H "Content-Type: application/json" \
+  -d "{\"email\":\"admin_assoc_1@example.com\",\"senha\":\"senha12345\"}"
+```
 
-## 🐋 Comandos úteis do Docker 
+## Melhorias de Instancias Aplicadas
 
-Limpar containers e imagens, no terminal do Windows (Powershell).
+O backend continua usando PHP-DI como container principal, mas agora a criacao de instancias na autenticacao e autorizacao ficou mais centralizada.
+
+### O que foi implementado e alterado
+
+As mudancas desta etapa foram focadas em organizacao da camada de autenticacao/autorizacao, reducao de acoplamento e padronizacao das respostas HTTP do backend.
+
+- `JwtConfig` foi criado para encapsular segredo, algoritmo e TTL do token
+- `JwtService` centraliza `encode` e `decode` de JWT
+- `JsonResponseFactory` padroniza respostas JSON nos middlewares
+- `backend/config/auth.php` passou a registrar essas dependencias no container do PHP-DI
+- `JwtMiddleware` deixou de depender de `$_ENV`, `JWT::decode(...)` e `new Response()` direto
+- `RoutePermissionMiddleware` agora usa injecao de dependencia e a mesma fabrica de resposta padronizada
+- `SessaoService` deixou de gerar token diretamente com `JWT::encode(...)` e passou a respeitar o TTL configurado
+- A geracao e validacao de token ficaram centralizadas em uma unica camada de suporte
+- As respostas de erro de autenticacao e permissao ficaram consistentes em JSON
+
+### Resultado pratico da refatoracao
+
+- Menos instanciacao manual espalhada pelo codigo
+- Menor acoplamento com variaveis globais
+- Regras de JWT concentradas em um ponto unico
+- Reaproveitamento maior entre login, cadastro e middlewares
+- Base mais limpa para testes, manutencao e futuras refatoracoes
+- Melhor legibilidade da arquitetura para documentacao e apresentacao academica
+
+### Arquivos Novos
+
+- [`backend/src/Support/JwtConfig.php`](./src/Support/JwtConfig.php)
+- [`backend/src/Support/JwtService.php`](./src/Support/JwtService.php)
+- [`backend/src/Support/JsonResponseFactory.php`](./src/Support/JsonResponseFactory.php)
+
+### Arquivos Atualizados
+
+- [`backend/config/auth.php`](./config/auth.php)
+- [`backend/src/Middlewares/JwtMiddleware.php`](./src/Middlewares/JwtMiddleware.php)
+- [`backend/src/Middlewares/RoutePermissionMiddleware.php`](./src/Middlewares/RoutePermissionMiddleware.php)
+- [`backend/src/Services/SessaoService.php`](./src/Services/SessaoService.php)
+
+### Ajuste de ambiente local relacionado ao backend
+
+- O arquivo de configuracao `docker/nginx/sites/ci.conf` foi desativado no ambiente local e mantido como `docker/nginx/sites/ci.conf.disabled` para evitar conflito com a execucao local da API
+
+### Script de teste manual
+
+- O arquivo [`backend/testar-backend.ps1`](./testar-backend.ps1) pode ser usado para validar rapidamente os endpoints de login e cadastro em ambiente local
+
+## Comandos Uteis do Docker
 
 ```bash
 # Parar todos os containers

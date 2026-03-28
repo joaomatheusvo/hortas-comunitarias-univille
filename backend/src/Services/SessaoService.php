@@ -1,14 +1,10 @@
 <?php
+
 namespace App\Services;
 
 use App\Models\CargoModel;
-use App\Services\UsuarioService;
-use App\Services\AssociacaoService;
-use App\Services\MensalidadeDaPlataformaService;
-use App\Services\PlanoService;
-use Firebase\JWT\JWT;
+use App\Support\JwtService;
 use Exception;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Database\Capsule\Manager as Capsule;
 
 class SessaoService
@@ -19,18 +15,19 @@ class SessaoService
         private CargoModel $cargoModel,
         private MensalidadeDaPlataformaService $mensalidadeService,
         private PlanoService $planoService,
-        private Capsule $capsule
+        private Capsule $capsule,
+        private JwtService $jwtService
     ) {}
 
     public function signIn(string $email, string $senha, array $payloadUsuarioLogado): string
     {
         $usuario = $this->usuarioService->findByEmail($email);
         if (!$usuario) {
-            throw new Exception("Usuário inválido");
+            throw new Exception('Usuário inválido');
         }
 
         if (!password_verify($senha, $usuario->senha)) {
-            throw new Exception("Senha inválida");
+            throw new Exception('Senha inválida');
         }
 
         $payload = [
@@ -38,30 +35,28 @@ class SessaoService
             'cargo_uuid' => $usuario->cargo_uuid,
             'associacao_uuid' => $usuario->associacao_uuid,
             'horta_uuid' => $usuario->horta_uuid,
-            'exp' => time() + 7200,
+            'exp' => time() + $this->jwtService->getTtlInSeconds(),
         ];
 
-        return JWT::encode($payload, $_ENV['JWT_SECRET'], 'HS256');
+        return $this->jwtService->encode($payload);
     }
+
     public function signUp(array $data): array
     {
-        $uuidSistema = "NEW_ACCOUNT";
-
-
+        $uuidSistema = 'NEW_ACCOUNT';
 
         return $this->capsule->connection()->transaction(function () use ($data, $uuidSistema) {
             $payloadMinimo = [
                 'usuario_uuid' => null,
                 'cargo_uuid' => null,
                 'associacao_uuid' => null,
-                'horta_uuid' => null
+                'horta_uuid' => null,
             ];
-
 
             $associacaoData = $data['associacao'] ?? [];
             $usuarioData = $data['usuario'] ?? [];
 
-            $payloadMinimo["usuario_uuid"] = $uuidSistema;
+            $payloadMinimo['usuario_uuid'] = $uuidSistema;
 
             $cargo = $this->cargoModel->firstOrCreate(['slug' => 'admin_associacao_geral']);
             $usuarioData['cargo_uuid'] = $cargo->uuid;
@@ -69,7 +64,7 @@ class SessaoService
             $associacao = $this->associacaoService->create($associacaoData, $payloadMinimo);
             $usuarioData['associacao_uuid'] = $associacao->uuid;
 
-            $payloadMinimo['cargo_uuid'] =$cargo->uuid;
+            $payloadMinimo['cargo_uuid'] = $cargo->uuid;
             $payloadMinimo['associacao_uuid'] = $associacao->uuid;
 
             $usuario = $this->usuarioService->create($usuarioData, $uuidSistema, $payloadMinimo);
@@ -98,18 +93,17 @@ class SessaoService
                 'cargo_uuid' => $usuario->cargo_uuid,
                 'associacao_uuid' => $usuario->associacao_uuid,
                 'horta_uuid' => $usuario->horta_uuid,
-                'exp' => time() + 7200,
+                'exp' => time() + $this->jwtService->getTtlInSeconds(),
             ];
 
-            $token = \Firebase\JWT\JWT::encode($payload, $_ENV['JWT_SECRET'], 'HS256');
+            $token = $this->jwtService->encode($payload);
 
             return [
                 'associacao' => $associacao,
                 'usuario' => $usuario,
                 'mensalidade' => $mensalidade,
-                'token' => $token
+                'token' => $token,
             ];
         });
     }
 }
-
