@@ -90,9 +90,9 @@ curl -X POST http://localhost:8181/api/v1/sessoes/login \
   -d "{\"email\":\"admin_assoc_1@example.com\",\"senha\":\"senha12345\"}"
 ```
 
-## Melhorias de Instancias Aplicadas
+## Melhorias de Associações Aplicadas
 
-O backend continua usando PHP-DI como container principal, mas agora a criacao de instancias na autenticacao e autorizacao ficou mais centralizada.
+O backend continua usando PHP-DI como container principal, mas agora a criacao de associações na autenticacao e autorizacao ficou mais centralizada.
 
 ### O que foi implementado e alterado
 
@@ -115,7 +115,7 @@ As mudancas desta etapa foram focadas em organizacao da camada de autenticacao/a
 - Regras de JWT concentradas em um ponto unico
 - Reaproveitamento maior entre login, cadastro e middlewares
 - Base mais limpa para testes, manutencao e futuras refatoracoes
-- Melhor legibilidade da arquitetura para documentacao e apresentacao academica
+- Melhor legibilidade da arquitetura para documentacao 
 
 ### Arquivos Novos
 
