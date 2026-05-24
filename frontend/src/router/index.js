@@ -51,12 +51,15 @@ const routes = [
     meta: { requiresAuth: true }
   },
   {
+<<<<<<< HEAD
     path: '/associacoes/:id/gestao',
     name: 'AssociacaoGestao',
     component: () => import('@/views/Associacoes/Gestao.vue'),
     meta: { requiresAuth: true }
   },
   {
+=======
+>>>>>>> 7aeff65ddcb92b5566b83fe14c1b56ae9be32929
     path: '/associacoes/:id/editar',
     name: 'AssociacoesEdit',
     component: () => import('@/views/Associacoes/Edit.vue'),

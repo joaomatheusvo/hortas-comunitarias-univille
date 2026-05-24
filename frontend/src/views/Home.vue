@@ -18,7 +18,11 @@
             <div class="fs-1 text-success mb-3">🏢</div>
             <h5 class="card-title">Associações</h5>
             <p class="card-text text-muted">
+<<<<<<< HEAD
               Membros, tarefas e engajamento
+=======
+              Gerencie as associações
+>>>>>>> 7aeff65ddcb92b5566b83fe14c1b56ae9be32929
             </p>
             <router-link to="/associacoes" class="btn btn-success">
               Acessar

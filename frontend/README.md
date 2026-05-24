@@ -201,6 +201,7 @@ npm run lint --fix       # Corrige problemas automaticamente
 
 ---
 
+<<<<<<< HEAD
 ## Modulo de Gestao da Associacao
 
 Tela para gerenciar membros, tarefas, historico e engajamento de cada associacao.
@@ -237,6 +238,8 @@ Execute o script `backend/src/Utils/SQL/03_modulo_gestao_associacao.sql` antes d
 
 ---
 
+=======
+>>>>>>> 7aeff65ddcb92b5566b83fe14c1b56ae9be32929
 ## 🧩 Componentes Principais
 
 ### Navbar
@@ -267,8 +270,12 @@ Campo de formulário reutilizável com validação.
 
 - **Home.vue:** Dashboard principal
 - **Login.vue:** Tela de login
+<<<<<<< HEAD
 - **Associacoes/List.vue:** Lista de associacoes (cards)
 - **Associacoes/Gestao.vue:** Gestao de membros, tarefas e participacao
+=======
+- **Associacoes/List.vue:** Lista de associações
+>>>>>>> 7aeff65ddcb92b5566b83fe14c1b56ae9be32929
 - **Hortas/List.vue:** Lista de hortas
 - **Canteiros/List.vue:** Lista de canteiros
 

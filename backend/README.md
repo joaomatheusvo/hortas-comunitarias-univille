@@ -18,6 +18,7 @@ Parte do setup com containers e parte local costuma performar melhor no Windows.
 
 Na raiz do projeto:
 
+<<<<<<< HEAD
 ```powershell
 copy backend\.env.example backend\.env
 docker compose up -d mysql php nginx phpmyadmin redis
@@ -39,11 +40,24 @@ docker exec hortas_php composer install --prefer-dist --no-progress --working-di
 
 > **Nota:** Se `docker compose exec php` retornar `service "php" is not running`, use `docker exec hortas_php` — os containers podem ter sido criados fora do contexto atual do Compose.
 
+=======
+```bash
+copy backend\.env.example backend\.env
+docker compose up -d mysql php nginx phpmyadmin redis
+docker compose exec php composer config --global audit.block-insecure false
+docker compose exec php composer config --global process-timeout 0
+docker compose exec php composer install --prefer-dist --no-progress
+```
+
+>>>>>>> 7aeff65ddcb92b5566b83fe14c1b56ae9be32929
 Importante:
 
 - O backend responde em `http://localhost:8181/api/v1`
 - O login funciona em `POST http://localhost:8181/api/v1/sessoes/login`
+<<<<<<< HEAD
 - Health check (sem autenticacao): `GET http://localhost:8181/api/v1/health`
+=======
+>>>>>>> 7aeff65ddcb92b5566b83fe14c1b56ae9be32929
 - Se existir conflito de configuracao no Nginx, mantenha desativado `docker/nginx/sites/ci.conf.disabled` no ambiente local
 
 ### Variaveis de Ambiente
@@ -76,9 +90,13 @@ API_VERSION=v1
 ### URLs de Acesso
 
 - Backend API: `http://localhost:8181/api/v1`
+<<<<<<< HEAD
 - Health check: `http://localhost:8181/api/v1/health`
 - phpMyAdmin: `http://localhost:8080`
 - Frontend (Docker): `http://localhost:3000`
+=======
+- phpMyAdmin: `http://localhost:8080`
+>>>>>>> 7aeff65ddcb92b5566b83fe14c1b56ae9be32929
 
 ## Banco de Dados e Seeds
 
@@ -87,6 +105,7 @@ Se o banco ainda nao estiver populado, rode os SQLs da pasta `backend/src/Utils/
 1. `00_SQL_criar_banco.sql`
 2. `01_SQL_seed_dados_iniciais.sql`
 3. `02_SQL_seed_dados_teste.sql`
+<<<<<<< HEAD
 4. `03_modulo_gestao_associacao.sql` — tabelas do modulo de gestao (membros, tarefas, historico)
 
 Voce pode executar pelo phpMyAdmin ou importar via terminal:
@@ -105,12 +124,22 @@ Para listar os usuarios carregados:
 
 ```powershell
 docker exec hortas_mysql mysql -u hortas_user -phortas_password railway -e "SELECT email, nome_completo, cpf FROM usuarios;"
+=======
+
+Voce pode executar pelo phpMyAdmin ou importar via terminal.
+
+Para listar os usuarios carregados:
+
+```bash
+docker compose exec mysql mysql -u hortas_user -phortas_password railway -e "SELECT email, nome_completo, cpf FROM usuarios;"
+>>>>>>> 7aeff65ddcb92b5566b83fe14c1b56ae9be32929
 ```
 
 ## Login de Teste
 
 Exemplo de teste:
 
+<<<<<<< HEAD
 ```powershell
 curl -X POST http://localhost:8181/api/v1/sessoes/login `
   -H "Content-Type: application/json" `
@@ -256,6 +285,17 @@ Arquivos principais:
 ## Melhorias de Autenticacao Aplicadas
 
 O backend continua usando PHP-DI como container principal, mas a criacao de associacoes na autenticacao e autorizacao ficou mais centralizada.
+=======
+```bash
+curl -X POST http://localhost:8181/api/v1/sessoes/login \
+  -H "Content-Type: application/json" \
+  -d "{\"email\":\"admin_assoc_1@example.com\",\"senha\":\"senha12345\"}"
+```
+
+## Melhorias de Associações Aplicadas
+
+O backend continua usando PHP-DI como container principal, mas agora a criacao de associações na autenticacao e autorizacao ficou mais centralizada.
+>>>>>>> 7aeff65ddcb92b5566b83fe14c1b56ae9be32929
 
 ### O que foi implementado e alterado
 
@@ -278,7 +318,11 @@ As mudancas desta etapa foram focadas em organizacao da camada de autenticacao/a
 - Regras de JWT concentradas em um ponto unico
 - Reaproveitamento maior entre login, cadastro e middlewares
 - Base mais limpa para testes, manutencao e futuras refatoracoes
+<<<<<<< HEAD
 - Melhor legibilidade da arquitetura para documentacao
+=======
+- Melhor legibilidade da arquitetura para documentacao 
+>>>>>>> 7aeff65ddcb92b5566b83fe14c1b56ae9be32929
 
 ### Arquivos Novos
 
@@ -303,6 +347,7 @@ As mudancas desta etapa foram focadas em organizacao da camada de autenticacao/a
 
 ## Comandos Uteis do Docker
 
+<<<<<<< HEAD
 ```powershell
 # Ver containers do projeto
 docker ps --filter "name=hortas_"
@@ -316,6 +361,9 @@ Get-Content ".\backend\src\Utils\SQL\03_modulo_gestao_associacao.sql" | docker e
 # Composer dentro do PHP
 docker exec hortas_php composer install --prefer-dist --no-progress --working-dir=/var/www/backend
 
+=======
+```bash
+>>>>>>> 7aeff65ddcb92b5566b83fe14c1b56ae9be32929
 # Parar todos os containers
 docker ps -aq | ForEach-Object { docker stop $_ }
 
