@@ -22,6 +22,6 @@ class ForcarJsonMiddleware
             $response->getBody()->write($conteudo);
         }
 
-        return $response->withHeader('Content-Type', 'application/json');
+        return $response->withHeader('Content-Type', 'application/json; charset=utf-8');
     }
 }

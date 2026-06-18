@@ -1,13 +1,8 @@
 import axios from 'axios'
 
 const api = axios.create({
-<<<<<<< HEAD
   baseURL: process.env.VUE_APP_API_URL || 'http://localhost:8181/api/v1',
   timeout: 15000,
-=======
-  baseURL: process.env.VUE_APP_API_URL || 'http://localhost:8000/api/v1',
-  timeout: 10000,
->>>>>>> 7aeff65ddcb92b5566b83fe14c1b56ae9be32929
 })
 
 api.interceptors.request.use(

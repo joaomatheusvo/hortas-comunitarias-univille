@@ -17,6 +17,24 @@
                 label="Nome"
                 :required="true"
               />
+
+              <div class="mb-3">
+                <label for="cnpj" class="form-label">CNPJ <span class="text-danger">*</span></label>
+                <input
+                  id="cnpj"
+                  v-model="form.cnpj"
+                  type="text"
+                  class="form-control"
+                  :class="{ 'is-invalid': errors.cnpj }"
+                  placeholder="00.000.000/0000-00"
+                  maxlength="18"
+                  required
+                  @input="formatCnpjInput"
+                />
+                <div v-if="errors.cnpj" class="invalid-feedback">
+                  {{ errors.cnpj }}
+                </div>
+              </div>
               
               <div class="mb-3">
                 <label for="descricao" class="form-label">Descrição</label>
@@ -69,7 +87,7 @@
               <div class="d-flex gap-2">
                 <button type="submit" class="btn btn-success" :disabled="loading">
                   <span v-if="loading">Salvando...</span>
-                  <span v-else">Salvar</span>
+                  <span v-else>Salvar</span>
                 </button>
                 <router-link to="/associacoes" class="btn btn-secondary">
                   Cancelar
@@ -88,6 +106,7 @@ import { ref, reactive, onMounted, computed } from 'vue'
 import { useStore } from 'vuex'
 import { useRouter, useRoute } from 'vue-router'
 import FormInput from '@/components/FormInput.vue'
+import { formatCnpj, validateCnpj } from '@/utils/cnpj'
 
 export default {
   name: 'AssociacoesEdit',
@@ -101,6 +120,7 @@ export default {
     
     const form = reactive({
       nome: '',
+      cnpj: '',
       descricao: '',
       endereco: '',
       telefone: '',
@@ -109,6 +129,7 @@ export default {
     
     const errors = reactive({
       nome: '',
+      cnpj: '',
       telefone: '',
       email: ''
     })
@@ -124,6 +145,7 @@ export default {
       const associacao = store.state.associacoes.currentAssociacao
       if (associacao) {
         form.nome = associacao.nome || ''
+        form.cnpj = associacao.cnpj || ''
         form.descricao = associacao.descricao || ''
         form.endereco = associacao.endereco || ''
         form.telefone = associacao.telefone || ''
@@ -134,11 +156,20 @@ export default {
     const validateForm = () => {
       let isValid = true
       errors.nome = ''
+      errors.cnpj = ''
       errors.telefone = ''
       errors.email = ''
       
       if (!form.nome || form.nome.trim() === '') {
         errors.nome = 'Nome é obrigatório'
+        isValid = false
+      }
+
+      if (!form.cnpj || form.cnpj.trim() === '') {
+        errors.cnpj = 'CNPJ é obrigatório'
+        isValid = false
+      } else if (!validateCnpj(form.cnpj)) {
+        errors.cnpj = 'CNPJ inválido'
         isValid = false
       }
       
@@ -177,6 +208,10 @@ export default {
       }
       form.telefone = value
     }
+
+    const formatCnpjInput = () => {
+      form.cnpj = formatCnpj(form.cnpj)
+    }
     
     const handleSubmit = async () => {
       if (!validateForm()) {
@@ -203,7 +238,8 @@ export default {
       errorMessage,
       isLoading,
       handleSubmit,
-      formatTelefone
+      formatTelefone,
+      formatCnpjInput
     }
   }
 }

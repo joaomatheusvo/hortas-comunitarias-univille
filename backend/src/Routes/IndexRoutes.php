@@ -5,12 +5,9 @@ use Slim\Routing\RouteCollectorProxy;
 
 return function (App $app) {
     $app->group('/api/v1', function (RouteCollectorProxy $group) {
-<<<<<<< HEAD
         $healthRoutes = require __DIR__ . '/HealthRoutes.php';
         $healthRoutes($group);
 
-=======
->>>>>>> 7aeff65ddcb92b5566b83fe14c1b56ae9be32929
         $sessaoRoutes = require __DIR__ . '/SessaoRoutes.php';
         $sessaoRoutes($group);
 

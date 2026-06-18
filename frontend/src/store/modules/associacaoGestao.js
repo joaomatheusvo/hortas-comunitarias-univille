@@ -38,7 +38,7 @@ const mutations = {
 }
 
 const actions = {
-  async carregarTudo({ commit, state }, { associacaoId, associacaoNome }) {
+  async carregarTudo({ commit }, { associacaoId, associacaoNome }) {
     commit('SET_ASSOCIACAO', { id: associacaoId, nome: associacaoNome })
     commit('SET_LOADING', true)
     commit('SET_ERRO', null)

@@ -16,9 +16,12 @@ return function(ContainerBuilder $containerBuilder) {
                 'database'  => $_ENV['DB_NAME'] ?? 'test',
                 'username'  => $_ENV['DB_USER'] ?? 'root',
                 'password'  => $_ENV['DB_PASS'] ?? '',
-                'charset'   => 'utf8',
-                'collation' => 'utf8_unicode_ci',
+                'charset'   => $_ENV['DB_CHARSET'] ?? 'utf8mb4',
+                'collation' => 'utf8mb4_unicode_ci',
                 'prefix'    => '',
+                'options'   => [
+                    \PDO::MYSQL_ATTR_INIT_COMMAND => 'SET NAMES utf8mb4 COLLATE utf8mb4_unicode_ci',
+                ],
             ]);
 
             $capsule->setAsGlobal();

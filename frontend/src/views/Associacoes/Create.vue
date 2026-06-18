@@ -19,6 +19,24 @@
                 :required="true"
                 :error="errors.nome"
               />
+
+              <div class="mb-3">
+                <label for="cnpj" class="form-label">CNPJ <span class="text-danger">*</span></label>
+                <input
+                  id="cnpj"
+                  v-model="form.cnpj"
+                  type="text"
+                  class="form-control"
+                  :class="{ 'is-invalid': errors.cnpj }"
+                  placeholder="00.000.000/0000-00"
+                  maxlength="18"
+                  required
+                  @input="formatCnpjInput"
+                />
+                <div v-if="errors.cnpj" class="invalid-feedback">
+                  {{ errors.cnpj }}
+                </div>
+              </div>
               
               <div class="mb-3">
                 <label for="descricao" class="form-label">Descrição</label>
@@ -98,6 +116,7 @@ import { ref, reactive } from 'vue'
 import { useStore } from 'vuex'
 import { useRouter } from 'vue-router'
 import FormInput from '@/components/FormInput.vue'
+import { formatCnpj, validateCnpj } from '@/utils/cnpj'
 
 export default {
   name: 'AssociacoesCreate',
@@ -110,6 +129,7 @@ export default {
     
     const form = reactive({
       nome: '',
+      cnpj: '',
       descricao: '',
       endereco: '',
       telefone: '',
@@ -118,6 +138,7 @@ export default {
     
     const errors = reactive({
       nome: '',
+      cnpj: '',
       telefone: '',
       email: ''
     })
@@ -131,6 +152,7 @@ export default {
       
       // Limpar erros
       errors.nome = ''
+      errors.cnpj = ''
       errors.telefone = ''
       errors.email = ''
       
@@ -140,6 +162,14 @@ export default {
         isValid = false
       } else if (form.nome.length < 3) {
         errors.nome = 'Nome deve ter no mínimo 3 caracteres'
+        isValid = false
+      }
+      
+      if (!form.cnpj || form.cnpj.trim() === '') {
+        errors.cnpj = 'CNPJ é obrigatório'
+        isValid = false
+      } else if (!validateCnpj(form.cnpj)) {
+        errors.cnpj = 'CNPJ inválido'
         isValid = false
       }
       
@@ -190,6 +220,10 @@ export default {
       
       form.telefone = value
     }
+
+    const formatCnpjInput = () => {
+      form.cnpj = formatCnpj(form.cnpj)
+    }
     
     const handleSubmit = async () => {
       if (!validateForm()) {
@@ -214,7 +248,8 @@ export default {
       loading,
       errorMessage,
       handleSubmit,
-      formatTelefone
+      formatTelefone,
+      formatCnpjInput
     }
   }
 }

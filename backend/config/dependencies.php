@@ -16,16 +16,13 @@
 
         $associacaoBindings = require __DIR__ . '/associacao_bindings.php';
         $associacaoBindings($containerBuilder);
-<<<<<<< HEAD
 
         $healthBindings = require __DIR__ . '/health_bindings.php';
         $healthBindings($containerBuilder);
 
         $associacaoGestaoBindings = require __DIR__ . '/associacao_gestao_bindings.php';
         $associacaoGestaoBindings($containerBuilder);
-=======
->>>>>>> 7aeff65ddcb92b5566b83fe14c1b56ae9be32929
-        
+
         $hortaBindings = require __DIR__ . '/horta_bindings.php';
         $hortaBindings($containerBuilder);
 

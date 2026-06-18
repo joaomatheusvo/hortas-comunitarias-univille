@@ -7,10 +7,7 @@ import carteiristas from './modules/carteiristas'
 import pagamentos from './modules/pagamentos'
 import dependentes from './modules/dependentes'
 import notificacoes from './modules/notificacoes'
-<<<<<<< HEAD
 import associacaoGestao from './modules/associacaoGestao'
-=======
->>>>>>> 7aeff65ddcb92b5566b83fe14c1b56ae9be32929
 
 export default createStore({
   modules: {
@@ -21,11 +18,7 @@ export default createStore({
     carteiristas,
     pagamentos,
     dependentes,
-<<<<<<< HEAD
     notificacoes,
     associacaoGestao
-=======
-    notificacoes
->>>>>>> 7aeff65ddcb92b5566b83fe14c1b56ae9be32929
   }
 })

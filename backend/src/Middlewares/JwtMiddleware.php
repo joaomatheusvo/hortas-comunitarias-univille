@@ -23,10 +23,7 @@ class JwtMiddleware
         $publicRoutes = [
             '/api/v1/sessoes/login POST',
             '/api/v1/sessoes/cadastro POST',
-<<<<<<< HEAD
             '/api/v1/health GET',
-=======
->>>>>>> 7aeff65ddcb92b5566b83fe14c1b56ae9be32929
         ];
 
         $routeKey = $uri . ' ' . $method;

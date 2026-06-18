@@ -16,12 +16,17 @@ class AssociacaoRepository
 
     public function findAllWhere(array $conditions): Collection
     {
-        return $this->associacaoModel->where($conditions)->get();
+        return $this->associacaoModel
+            ->with(['endereco', 'usuarioResponsavel'])
+            ->where($conditions)
+            ->get();
     }
 
     public function findByUuid(string $uuid): ?AssociacaoModel
     {
-        return $this->associacaoModel->find($uuid);
+        return $this->associacaoModel
+            ->with(['endereco', 'usuarioResponsavel'])
+            ->find($uuid);
     }
     public function findByCnpj(string $cnpj): ?AssociacaoModel
     {

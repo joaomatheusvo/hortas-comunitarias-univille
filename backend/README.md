@@ -18,15 +18,10 @@ Parte do setup com containers e parte local costuma performar melhor no Windows.
 
 Na raiz do projeto:
 
-<<<<<<< HEAD
 ```powershell
 copy backend\.env.example backend\.env
-docker compose up -d mysql php nginx phpmyadmin redis
-```
-
-Se aparecer conflito de nome de container (`hortas_mysql already in use`), os containers ja existem. Inicie-os com:
-
-```powershell
+docker compose build php
+docker compose up -d
 docker start hortas_mysql hortas_php hortas_nginx hortas_phpmyadmin hortas_redis hortas_frontend
 ```
 
@@ -38,26 +33,15 @@ docker exec hortas_php composer config --global process-timeout 0
 docker exec hortas_php composer install --prefer-dist --no-progress --working-dir=/var/www/backend
 ```
 
-> **Nota:** Se `docker compose exec php` retornar `service "php" is not running`, use `docker exec hortas_php` — os containers podem ter sido criados fora do contexto atual do Compose.
+> **Importante:** use `docker compose up -d` na pasta do projeto (`hortas-comunitarias-univille`). Evite apenas `docker start` em containers antigos criados em outro diretorio — isso pode apontar volumes errados e quebrar o localhost.
 
-=======
-```bash
-copy backend\.env.example backend\.env
-docker compose up -d mysql php nginx phpmyadmin redis
-docker compose exec php composer config --global audit.block-insecure false
-docker compose exec php composer config --global process-timeout 0
-docker compose exec php composer install --prefer-dist --no-progress
-```
+> **Nota:** Se `docker compose exec php` retornar `service "php" is not running`, use `docker exec hortas_php`.
 
->>>>>>> 7aeff65ddcb92b5566b83fe14c1b56ae9be32929
 Importante:
 
 - O backend responde em `http://localhost:8181/api/v1`
 - O login funciona em `POST http://localhost:8181/api/v1/sessoes/login`
-<<<<<<< HEAD
 - Health check (sem autenticacao): `GET http://localhost:8181/api/v1/health`
-=======
->>>>>>> 7aeff65ddcb92b5566b83fe14c1b56ae9be32929
 - Se existir conflito de configuracao no Nginx, mantenha desativado `docker/nginx/sites/ci.conf.disabled` no ambiente local
 
 ### Variaveis de Ambiente
@@ -65,10 +49,7 @@ Importante:
 Crie `backend/.env` com base em `backend/.env.example`.
 
 Exemplo:
-
 ```env
-# Environment
-APP_ENV=development
 APP_DEBUG=true
 
 # Database
@@ -90,13 +71,90 @@ API_VERSION=v1
 ### URLs de Acesso
 
 - Backend API: `http://localhost:8181/api/v1`
-<<<<<<< HEAD
 - Health check: `http://localhost:8181/api/v1/health`
 - phpMyAdmin: `http://localhost:8080`
 - Frontend (Docker): `http://localhost:3000`
-=======
-- phpMyAdmin: `http://localhost:8080`
->>>>>>> 7aeff65ddcb92b5566b83fe14c1b56ae9be32929
+
+---
+
+## Implementacoes Recentes (Frontend + Backend)
+
+Resumo do que foi implementado e ajustado no ambiente local.
+
+### Infraestrutura Docker
+
+| Item | Descricao |
+|------|-----------|
+| `docker/php/Dockerfile` | Container PHP 8.2-FPM com extensoes `pdo_mysql`, `mysqli`, `zip` e Composer |
+| `docker/php/php.ini` | Configuracao PHP para desenvolvimento |
+| `docker-compose.yml` | Frontend sem instalacao global quebrada do Vue CLI; dependencias via `npm install` local |
+
+### Modulo de Associacoes (Frontend)
+
+Tela em `http://localhost:3000/associacoes`:
+
+| Funcionalidade | Descricao |
+|----------------|-----------|
+| Listagem em tabela | CNPJ, nome, endereco legivel, administradores, status |
+| Cards de resumo | Total, ativas e inativas/pendentes |
+| Busca e filtro | Por CNPJ, nome, endereco ou status |
+| Acoes por linha | Gestao (olho), Tarefas, Editar, Excluir |
+| Cadastro com CNPJ | Campo obrigatorio com mascara e validacao de digitos |
+| Edicao com CNPJ | Mesma validacao do cadastro |
+
+Arquivos principais:
+
+- `frontend/src/views/Associacoes/List.vue`
+- `frontend/src/views/Associacoes/Create.vue`
+- `frontend/src/views/Associacoes/Edit.vue`
+- `frontend/src/utils/cnpj.js`
+
+### Gestao da Associacao (Frontend)
+
+Rota: `http://localhost:3000/associacoes/{uuid}/gestao`
+
+Abas disponiveis:
+
+| Aba | Conteudo |
+|-----|----------|
+| Visao Geral | Metricas (membros, tarefas, engajamento alto) e atalhos |
+| Membros | Cadastro, ativacao/inativacao e exclusao |
+| Tarefas | Criar, atribuir responsavel, concluir e excluir |
+| Engajamento | Nivel por membro + historico de participacao |
+
+Atalho direto para tarefas: `http://localhost:3000/associacoes/{uuid}/gestao?tab=tarefas`
+
+Arquivos principais:
+
+- `frontend/src/views/Associacoes/Gestao.vue`
+- `frontend/src/services/associacaoGestao.service.js`
+- `frontend/src/store/modules/associacaoGestao.js`
+
+### Melhorias no Backend (Associacoes)
+
+| Item | Arquivo | Descricao |
+|------|---------|-----------|
+| CNPJ obrigatorio | `src/Utils/CnpjValidator.php` | Normaliza, valida digitos e impede duplicados |
+| Endereco legivel | `src/Utils/EnderecoFormatter.php` | Formata endereco a partir da tabela `enderecos` (sem UUID/JSON) |
+| API enriquecida | `src/Controllers/AssociacaoController.php` | Retorna `cnpj`, `endereco`, `status`, `administradores` |
+| Charset UTF-8 | `config/database.php` | Conexao `utf8mb4` + `SET NAMES utf8mb4` |
+| Respostas JSON | `ForcarJsonMiddleware.php`, `JsonResponseFactory.php` | Header `charset=utf-8` e `JSON_UNESCAPED_UNICODE` |
+
+### Encoding e acentuacao
+
+Se aparecer `Administra????o` ou `AssociaÃ§Ã£o`:
+
+1. Confirme `DB_CHARSET=utf8mb4` em `backend/.env`
+2. Execute o script de correcao:
+
+```powershell
+docker cp ".\backend\src\Utils\SQL\04_fix_encoding_utf8.sql" hortas_mysql:/tmp/04_fix_encoding_utf8.sql
+docker exec hortas_mysql mysql -u hortas_user -phortas_password --default-character-set=utf8mb4 railway -e "source /tmp/04_fix_encoding_utf8.sql"
+```
+
+3. Faca logout e login novamente no frontend (o nome fica em cache no `localStorage`)
+
+---
 
 ## Banco de Dados e Seeds
 
@@ -105,13 +163,30 @@ Se o banco ainda nao estiver populado, rode os SQLs da pasta `backend/src/Utils/
 1. `00_SQL_criar_banco.sql`
 2. `01_SQL_seed_dados_iniciais.sql`
 3. `02_SQL_seed_dados_teste.sql`
-<<<<<<< HEAD
 4. `03_modulo_gestao_associacao.sql` — tabelas do modulo de gestao (membros, tarefas, historico)
+5. `04_fix_encoding_utf8.sql` — corrige acentuacao se os seeds foram importados com encoding errado no Windows
 
-Voce pode executar pelo phpMyAdmin ou importar via terminal:
+> Se `00_SQL_criar_banco.sql` retornar `Table already exists`, o banco ja tem tabelas — pule o passo 00 e rode apenas `01` a `04`.
+
+Voce pode executar pelo phpMyAdmin ou importar via terminal.
+
+**No Windows (PowerShell), use sempre UTF-8 ao importar SQL:**
 
 ```powershell
-Get-Content ".\backend\src\Utils\SQL\03_modulo_gestao_associacao.sql" | docker exec -i hortas_mysql mysql -u hortas_user -phortas_password railway
+Get-Content ".\backend\src\Utils\SQL\01_SQL_seed_dados_iniciais.sql" -Encoding UTF8 | docker exec -i hortas_mysql mysql -u hortas_user -phortas_password --default-character-set=utf8mb4 railway
+```
+
+Ou copie o arquivo para o container e execute com `source`:
+
+```powershell
+docker cp ".\backend\src\Utils\SQL\04_fix_encoding_utf8.sql" hortas_mysql:/tmp/04_fix_encoding_utf8.sql
+docker exec hortas_mysql mysql -u hortas_user -phortas_password --default-character-set=utf8mb4 railway -e "source /tmp/04_fix_encoding_utf8.sql"
+```
+
+Exemplo para o modulo de gestao:
+
+```powershell
+Get-Content ".\backend\src\Utils\SQL\03_modulo_gestao_associacao.sql" -Encoding UTF8 | docker exec -i hortas_mysql mysql -u hortas_user -phortas_password --default-character-set=utf8mb4 railway
 ```
 
 Para verificar se as tabelas do modulo foram criadas:
@@ -124,26 +199,34 @@ Para listar os usuarios carregados:
 
 ```powershell
 docker exec hortas_mysql mysql -u hortas_user -phortas_password railway -e "SELECT email, nome_completo, cpf FROM usuarios;"
-=======
-
-Voce pode executar pelo phpMyAdmin ou importar via terminal.
-
-Para listar os usuarios carregados:
-
-```bash
-docker compose exec mysql mysql -u hortas_user -phortas_password railway -e "SELECT email, nome_completo, cpf FROM usuarios;"
->>>>>>> 7aeff65ddcb92b5566b83fe14c1b56ae9be32929
 ```
 
-## Login de Teste
+## Credenciais de Teste
+
+### Administrador da plataforma (seed padrao)
+
+| Campo | Valor |
+|-------|-------|
+| Email | `hortas_comunitarias@univille.br` |
+| Senha | `senha12345` |
+
+### Outros usuarios de teste (apos seed `02`)
+
+| Perfil | Email | Senha |
+|--------|-------|-------|
+| Admin associacao | `admin_assoc_1@example.com` | `senha12345` |
+| Canteirista | `canteirista_1@example.com` | `senha12345` |
+
+Login no frontend: `http://localhost:3000` → selecione **Administrador** ou **Canteirista**.
+
+## Login de Teste (API)
 
 Exemplo de teste:
 
-<<<<<<< HEAD
 ```powershell
 curl -X POST http://localhost:8181/api/v1/sessoes/login `
   -H "Content-Type: application/json" `
-  -d "{\"email\":\"admin_assoc_1@example.com\",\"senha\":\"senha12345\"}"
+  -d "{\"email\":\"hortas_comunitarias@univille.br\",\"senha\":\"senha12345\"}"
 ```
 
 Verificar disponibilidade da API:
@@ -243,6 +326,9 @@ curl -X POST "http://localhost:8181/api/v1/associacoes/{UUID}/tarefas/{UUID_TARE
 ### Arquivos novos (backend)
 
 - [`backend/src/Utils/SQL/03_modulo_gestao_associacao.sql`](./src/Utils/SQL/03_modulo_gestao_associacao.sql)
+- [`backend/src/Utils/SQL/04_fix_encoding_utf8.sql`](./src/Utils/SQL/04_fix_encoding_utf8.sql)
+- [`backend/src/Utils/CnpjValidator.php`](./src/Utils/CnpjValidator.php)
+- [`backend/src/Utils/EnderecoFormatter.php`](./src/Utils/EnderecoFormatter.php)
 - [`backend/src/Utils/AssociacaoGestaoValidator.php`](./src/Utils/AssociacaoGestaoValidator.php)
 - [`backend/src/Models/MembroAssociacaoModel.php`](./src/Models/MembroAssociacaoModel.php)
 - [`backend/src/Models/TarefaAssociacaoModel.php`](./src/Models/TarefaAssociacaoModel.php)
@@ -263,39 +349,51 @@ curl -X POST "http://localhost:8181/api/v1/associacoes/{UUID}/tarefas/{UUID_TARE
 
 ### Arquivos atualizados (backend)
 
+- [`backend/src/Controllers/AssociacaoController.php`](./src/Controllers/AssociacaoController.php) — resposta com CNPJ, endereco e status
+- [`backend/src/Services/AssociacaoService.php`](./src/Services/AssociacaoService.php) — validacao de CNPJ
+- [`backend/src/Repositories/AssociacaoRepository.php`](./src/Repositories/AssociacaoRepository.php) — eager load de endereco
+- [`backend/config/database.php`](./config/database.php) — charset utf8mb4
 - [`backend/src/Routes/AssociacaoRoutes.php`](./src/Routes/AssociacaoRoutes.php)
 - [`backend/src/Routes/IndexRoutes.php`](./src/Routes/IndexRoutes.php)
 - [`backend/src/Middlewares/JwtMiddleware.php`](./src/Middlewares/JwtMiddleware.php) — rota `/health` publica
+- [`backend/src/Middlewares/ForcarJsonMiddleware.php`](./src/Middlewares/ForcarJsonMiddleware.php)
 - [`backend/config/dependencies.php`](./config/dependencies.php)
 
 ### Frontend relacionado
 
-A tela de gestao esta em `frontend/src/views/Associacoes/Gestao.vue`, acessivel em:
+#### Listagem de associacoes
 
-- `http://localhost:3000/associacoes` → botao **Gestao**
+- URL: `http://localhost:3000/associacoes`
+- Botao **Gestao** (icone de olho) abre a tela completa
+- Botao **Tarefas** abre direto na aba de tarefas
+
+#### Gestao por associacao
+
+- URL: `http://localhost:3000/associacoes/{uuid}/gestao`
+- Abas: Visao Geral, Membros, Tarefas, Engajamento
 
 Arquivos principais:
 
+- `frontend/src/views/Associacoes/List.vue`
+- `frontend/src/views/Associacoes/Gestao.vue`
+- `frontend/src/views/Associacoes/Create.vue`
+- `frontend/src/views/Associacoes/Edit.vue`
 - `frontend/src/services/associacaoGestao.service.js`
 - `frontend/src/store/modules/associacaoGestao.js`
+- `frontend/src/utils/cnpj.js`
 - `frontend/src/utils/mensagens.js`
+
+#### Cadastro de associacao com CNPJ
+
+- URL: `http://localhost:3000/associacoes/criar`
+- CNPJ obrigatorio, com mascara `00.000.000/0000-00` e validacao
+- Exemplo de CNPJ valido para teste: `11.444.777/0001-61`
 
 ---
 
 ## Melhorias de Autenticacao Aplicadas
 
 O backend continua usando PHP-DI como container principal, mas a criacao de associacoes na autenticacao e autorizacao ficou mais centralizada.
-=======
-```bash
-curl -X POST http://localhost:8181/api/v1/sessoes/login \
-  -H "Content-Type: application/json" \
-  -d "{\"email\":\"admin_assoc_1@example.com\",\"senha\":\"senha12345\"}"
-```
-
-## Melhorias de Associações Aplicadas
-
-O backend continua usando PHP-DI como container principal, mas agora a criacao de associações na autenticacao e autorizacao ficou mais centralizada.
->>>>>>> 7aeff65ddcb92b5566b83fe14c1b56ae9be32929
 
 ### O que foi implementado e alterado
 
@@ -318,11 +416,7 @@ As mudancas desta etapa foram focadas em organizacao da camada de autenticacao/a
 - Regras de JWT concentradas em um ponto unico
 - Reaproveitamento maior entre login, cadastro e middlewares
 - Base mais limpa para testes, manutencao e futuras refatoracoes
-<<<<<<< HEAD
 - Melhor legibilidade da arquitetura para documentacao
-=======
-- Melhor legibilidade da arquitetura para documentacao 
->>>>>>> 7aeff65ddcb92b5566b83fe14c1b56ae9be32929
 
 ### Arquivos Novos
 
@@ -345,31 +439,67 @@ As mudancas desta etapa foram focadas em organizacao da camada de autenticacao/a
 
 - O arquivo [`backend/testar-backend.ps1`](./testar-backend.ps1) pode ser usado para validar rapidamente os endpoints de login e cadastro em ambiente local
 
+## Solucao de Problemas Comuns
+
+### Localhost nao abre / 502 Bad Gateway
+
+```powershell
+# Recriar containers a partir da pasta correta do projeto
+docker compose down
+docker compose build php
+docker compose up -d
+docker exec hortas_php composer install --prefer-dist --no-progress --working-dir=/var/www/backend
+```
+
+Verifique: `curl http://localhost:8181/api/v1/health`
+
+### Erro `Table 'enderecos' already exists` ao rodar `00_SQL_criar_banco.sql`
+
+O banco ja tem tabelas parciais. **Pule o passo 00** e rode apenas os seeds (`01`, `02`, `03`). Se faltar a tabela `usuarios`, crie-a manualmente ou importe somente as tabelas ausentes.
+
+### Frontend nao carrega (`vue-cli-service not found`)
+
+```powershell
+docker compose restart frontend
+docker logs hortas_frontend --tail 30
+```
+
+Na primeira subida o container instala dependencias — aguarde alguns minutos.
+
+### Acentos quebrados no navegador
+
+Execute `04_fix_encoding_utf8.sql` (ver secao **Encoding e acentuacao**) e faca logout/login.
+
+### CNPJ rejeitado no cadastro
+
+O CNPJ precisa ser valido (14 digitos + verificadores). CNPJs ficticios com digitos repetidos (ex.: `11.111.111/1111-11`) sao rejeitados. Use um CNPJ de teste valido, como `11.444.777/0001-61`.
+
+---
+
 ## Comandos Uteis do Docker
 
-<<<<<<< HEAD
 ```powershell
 # Ver containers do projeto
 docker ps --filter "name=hortas_"
 
-# Iniciar containers existentes (sem recriar)
-docker start hortas_mysql hortas_php hortas_nginx hortas_phpmyadmin hortas_redis hortas_frontend
+# Rebuild apenas do PHP apos mudancas no Dockerfile
+docker compose build php
+docker compose up -d php
 
-# Executar SQL do modulo de gestao
-Get-Content ".\backend\src\Utils\SQL\03_modulo_gestao_associacao.sql" | docker exec -i hortas_mysql mysql -u hortas_user -phortas_password railway
+# Reiniciar frontend apos mudancas no codigo Vue
+docker compose restart frontend
+
+# Executar SQL com encoding correto (Windows)
+Get-Content ".\backend\src\Utils\SQL\03_modulo_gestao_associacao.sql" -Encoding UTF8 | docker exec -i hortas_mysql mysql -u hortas_user -phortas_password --default-character-set=utf8mb4 railway
 
 # Composer dentro do PHP
 docker exec hortas_php composer install --prefer-dist --no-progress --working-dir=/var/www/backend
 
-=======
-```bash
->>>>>>> 7aeff65ddcb92b5566b83fe14c1b56ae9be32929
-# Parar todos os containers
-docker ps -aq | ForEach-Object { docker stop $_ }
+# Ver logs
+docker logs hortas_php --tail 30
+docker logs hortas_frontend --tail 30
+docker logs hortas_nginx --tail 30
 
-# Remover todos os containers
-docker ps -aq | ForEach-Object { docker rm $_ }
-
-# Remover todas as imagens
-docker images -q | ForEach-Object { docker rmi -f $_ }
+# Parar todos os containers do projeto
+docker compose down
 ```

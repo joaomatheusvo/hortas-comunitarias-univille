@@ -17,8 +17,8 @@ class JsonResponseFactory
     public function create(array $data, int $status = 200): ResponseInterface
     {
         $response = $this->responseFactory->createResponse($status);
-        $response->getBody()->write(json_encode($data));
+        $response->getBody()->write(json_encode($data, JSON_UNESCAPED_UNICODE));
 
-        return $response->withHeader('Content-Type', 'application/json');
+        return $response->withHeader('Content-Type', 'application/json; charset=utf-8');
     }
 }

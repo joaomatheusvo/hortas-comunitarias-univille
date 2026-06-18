@@ -80,7 +80,7 @@ const actions = {
     } catch (error) {
       return { 
         success: false, 
-        message: error.response?.data?.detail || 'Erro ao criar associação' 
+        message: error.response?.data?.error || error.response?.data?.detail || 'Erro ao criar associação' 
       }
     }
   },
@@ -93,7 +93,7 @@ const actions = {
     } catch (error) {
       return { 
         success: false, 
-        message: error.response?.data?.detail || 'Erro ao atualizar associação' 
+        message: error.response?.data?.error || error.response?.data?.detail || 'Erro ao atualizar associação' 
       }
     }
   },

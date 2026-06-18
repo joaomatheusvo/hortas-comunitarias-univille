@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\AssociacaoModel;
 use App\Repositories\AssociacaoRepository;
+use App\Utils\CnpjValidator;
 use Respect\Validation\Validator as v;
 use Illuminate\Database\Eloquent\Collection;
 use Exception;
@@ -62,15 +63,25 @@ class AssociacaoService
             $data['telefone_de_contato'] = $data['telefone'];
             unset($data['telefone']);
         }
+
+        if (empty($data['cnpj'])) {
+            throw new Exception('CNPJ é obrigatório');
+        }
+
+        try {
+            $data['cnpj'] = CnpjValidator::normalize($data['cnpj']);
+        } catch (\InvalidArgumentException $e) {
+            throw new Exception($e->getMessage());
+        }
+
+        $existente = $this->associacaoRepository->findByCnpj($data['cnpj']);
+        if ($existente && !$existente->excluido) {
+            throw new Exception('CNPJ já cadastrado');
+        }
         
         // Validação mínima - apenas nome é obrigatório (após o mapeamento)
         if (empty($data['razao_social'])) {
             throw new Exception("Nome da associação é obrigatório");
-        }
-        
-        // Gerar CNPJ temporário se não fornecido (para não violar constraint UNIQUE)
-        if (!isset($data['cnpj']) || empty($data['cnpj'])) {
-            $data['cnpj'] = 'TEMP-' . time() . '-' . rand(1000, 9999);
         }
         
         // Definir valores padrão para campos opcionais
@@ -108,6 +119,19 @@ class AssociacaoService
         if (isset($data['telefone']) && !isset($data['telefone_de_contato'])) {
             $data['telefone_de_contato'] = $data['telefone'];
             unset($data['telefone']);
+        }
+
+        if (isset($data['cnpj']) && $data['cnpj'] !== '') {
+            try {
+                $data['cnpj'] = CnpjValidator::normalize($data['cnpj']);
+            } catch (\InvalidArgumentException $e) {
+                throw new Exception($e->getMessage());
+            }
+
+            $existente = $this->associacaoRepository->findByCnpj($data['cnpj']);
+            if ($existente && !$existente->excluido && $existente->uuid !== $uuid) {
+                throw new Exception('CNPJ já cadastrado');
+            }
         }
 
         $data['usuario_alterador_uuid'] = $payloadUsuarioLogado['usuario_uuid'];

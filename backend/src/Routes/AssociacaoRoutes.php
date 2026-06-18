@@ -1,21 +1,16 @@
 <?php
 
 use App\Controllers\AssociacaoController;
-<<<<<<< HEAD
 use App\Controllers\MembroAssociacaoController;
 use App\Controllers\TarefaAssociacaoController;
 use App\Controllers\EngajamentoAssociacaoController;
-=======
->>>>>>> 7aeff65ddcb92b5566b83fe14c1b56ae9be32929
 use Slim\Routing\RouteCollectorProxy;
 
 return function (RouteCollectorProxy $app) {
     $app->group('/associacoes', function (RouteCollectorProxy $group) {
         $group->get('', AssociacaoController::class . ':list');
-<<<<<<< HEAD
         $group->post('', AssociacaoController::class . ':create');
 
-        // Gestão da associação (membros, tarefas, participação)
         $group->get('/{uuid}/membros', MembroAssociacaoController::class . ':list');
         $group->get('/{uuid}/membros/{membroUuid}', MembroAssociacaoController::class . ':get');
         $group->post('/{uuid}/membros', MembroAssociacaoController::class . ':create');
@@ -35,10 +30,4 @@ return function (RouteCollectorProxy $app) {
         $group->put('/{uuid}', AssociacaoController::class . ':update');
         $group->delete('/{uuid}', AssociacaoController::class . ':delete');
     });
-=======
-        $group->get('/{uuid}', AssociacaoController::class . ':get');
-        $group->post('', AssociacaoController::class . ':create');
-        $group->put('/{uuid}', AssociacaoController::class . ':update');
-        $group->delete('/{uuid}', AssociacaoController::class . ':delete');});
->>>>>>> 7aeff65ddcb92b5566b83fe14c1b56ae9be32929
 };
